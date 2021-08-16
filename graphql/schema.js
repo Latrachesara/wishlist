@@ -2,25 +2,25 @@
 const { GraphQLSchema, GraphQLObjectType } = require("graphql")
 
 // Import queries
-const {/* users, user, wishlists, wishlist, products, product */} = require("./queries")
+const {users, user, wishlists, wishlist, products, product } = require("./queries")
 
 // Import mutations
 const {
-  /*register,
+  register,
   login,
   addWishlist,
   addProduct,
   updateWishlist,
   deleteWishlist,
   updateProduct,
-  deleteProduct,*/
+  deleteProduct,
 } = require("./mutations")
 
 // Define QueryType
 const QueryType = new GraphQLObjectType({
   name: "QueryType",
   description: "Queries",
-  fields: { /*users, user, wishlists, wishlist, products, product*/ },
+  fields: { users, user, wishlists, wishlist, products, product},
 })
 
 // Define MutationType
@@ -28,14 +28,14 @@ const MutationType = new GraphQLObjectType({
   name: "MutationType",
   description: "Mutations",
   fields: {
-   /* register,
+   register,
     login,
     addWishlist,
     addProduct,
     updateWishlist,
     deleteWishlist,
     updateProduct,
-    deleteProduct,*/
+    deleteProduct,
   },
 })
 

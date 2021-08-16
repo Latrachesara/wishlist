@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const wishistSchema = new mongoose.Schema(
+const wishlistSchema = new mongoose.Schema(
   {
     authorId: {
       type: String,

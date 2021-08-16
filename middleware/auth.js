@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken")
     const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;
     
     function authenticate(req, res, next) {
-      try {
+      /*try {
         const token = req.cookies.accessToken;
         console.log(token);
         if (!token)
@@ -16,7 +16,7 @@ const jwt = require("jsonwebtoken")
         next();
       } catch (err) {
         return res.status(401).json({ status: "error", message: "Unauthorized" });
-      }
+      }*/
     }
     
  
