@@ -12,11 +12,11 @@ const register = {
     username: { type: GraphQLString },
     email: { type: GraphQLString },
     password: { type: GraphQLString },
-    displayName: { type: GraphQLString },
+   
   },
   async resolve(parent, args) {
     const { username, email, password, displayName } = args
-    const user = new User({ username, email, password, displayName })
+    const user = new User({ username, email, password })
 
     await user.save()
         const token = createJwtToken(user)
