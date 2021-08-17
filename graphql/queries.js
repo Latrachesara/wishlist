@@ -2,6 +2,7 @@ const { GraphQLList, GraphQLID } = require("graphql")
 const { UserType, WishlistType, ProductType } = require("./types")
 const { User, Wishlist, Product } = require("../models")
 
+
 const users = {
   type: new GraphQLList(UserType),
   description: "Retrieves list of users",
@@ -14,7 +15,6 @@ const user = {
   type: UserType,
   description: "Retrieves one user",
   args: { id: { type: GraphQLID } },
-
   resolve(parent, args) {
     return User.findById(args.id)
   },
@@ -43,7 +43,6 @@ const products = {
     return Product.find()
   },
 }
-
 const product = {
   type: ProductType,
   description: "Retrieves one product",
