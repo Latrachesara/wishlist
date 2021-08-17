@@ -2,16 +2,14 @@ const { WishlistType, ProductType } = require("./types");
 const { User, Wishlist, Product } = require("../models");
 const { GraphQLString } = require("graphql");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 const createAccessToken = (payload) => {
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "1d",
   });
 };
-const Auth = require("./../middleware/auth");
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
 
-const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const register = {
   type: GraphQLString,
   description: "Register new user",
@@ -25,18 +23,15 @@ const register = {
     const passwordHashed = await bcrypt.hash(password, 12);
     const user = new User({ username, email, password: passwordHashed });
     await user.save().then((user) => {
+      console.log(user);
       const token = createAccessToken({ id: user._id });
-    
       res.cookie("accessToken", token, {
         httpOnly: true,
         path: "/",
-        maxAge: 30 * 24 * 60 * 60 * 1000, //30days
-        
-      });
-      console.log(token);
-      return token;
-      
+        maxAge: 30 * 24 * 60 * 60 * 1000, //30days    
+      });  
     });
+      return ("user created");
   },
 };
 
@@ -71,6 +66,7 @@ const addWishlist = {
     title: { type: GraphQLString },
   },
   resolve(parent, args, { req, res }) {
+    console.log(req);
     try {
       const token = req.cookies.accessToken;
       console.log(token);
@@ -78,7 +74,7 @@ const addWishlist = {
         return res
           .status(401)
           .json({ status: "error", message: "Unauthorized" });
-      const verified = jwt.verify(token, JWT_SECRET);
+      const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
       const wishlist = new Wishlist({
         authorId: verified.id,
         title: args.title,
@@ -99,21 +95,34 @@ const updateWishlist = {
     title: { type: GraphQLString },
   },
   async resolve(parent, args, { req, res }) {
-    const wishlistUpdated = await Wishlist.findOneAndUpdate(
-      {
-        _id: args.id,
-        authorId: verifiedUser._id,
-      },
-      { title: args.title, body: args.body },
-      {
-        new: true,
-        runValidators: true,
+    try {
+      const token = req.cookies.accessToken;
+      console.log(token);
+      if (!token)
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      const wishlistUpdated = await Wishlist.findOneAndUpdate(
+        {
+          _id: args.id,
+          authorId: verifiedUser._id,
+        },
+        { title: args.title, body: args.body },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      if (!wishlistUpdated) {
+        throw new Error("No wishlist with the given ID found for the author");
       }
-    );
-    if (!wishlistUpdated) {
-      throw new Error("No wishlist with the given ID found for the author");
+      return wishlistUpdated;
+    } catch (err) {
+      console.log(err);
+      return res.status(401).json({ status: "error", message: "ERROR" });
     }
-    return wishlistUpdated;
+   
   },
 };
 
@@ -123,11 +132,16 @@ const deleteWishlist = {
   args: {
     wishlitId: { type: GraphQLString },
   },
-  async resolve(parent, args, { verifiedUser }) {
-    console.log(verifiedUser);
-    if (!verifiedUser) {
-      throw new Error("Unauthenticated");
-    }
+  async resolve(parent, args, { req, res }) {
+
+    try {
+      const token = req.cookies.accessToken;
+      console.log(token);
+      if (!token)
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     const wishlistDeleted = await Wishlist.findOneAndDelete({
       _id: args.wishlistId,
       authorId: verifiedUser._id,
@@ -136,6 +150,10 @@ const deleteWishlist = {
       throw new Error("No wishlist with the given ID found for the author");
     }
     return "Wishlist deleted";
+  } catch (err) {
+    console.log(err);
+    return res.status(401).json({ status: "error", message: "ERROR" });
+  }
   },
 };
 
@@ -152,7 +170,7 @@ const addProduct = {
     image: { type: GraphQLString },
     wishlistId: { type: GraphQLString },
   },
-  resolve(parent, args, { verifiedUser }) {
+  resolve(parent, args, { req,res }) {
     try {
       const token = req.cookies.accessToken;
       console.log(token);
@@ -160,9 +178,9 @@ const addProduct = {
         return res
           .status(401)
           .json({ status: "error", message: "Unauthorized" });
-      const verified = jwt.verify(token, JWT_SECRET);
+      const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
       const product = new Product({
-        userId: verifiedUser._id,
+        userId: verified.id,
         wishlistId: args.wishlistId,
         name: args.name,
         price: args.price,
@@ -191,10 +209,15 @@ const updateProduct = {
     status: { type: GraphQLString },
     image: { type: GraphQLString },
   },
-  async resolve(parent, args, { verifiedUser }) {
-    if (!verifiedUser) {
-      throw new Error("Unauthenticated");
-    }
+  async resolve(parent, args, { req, res }) {
+    try {
+      const token = req.cookies.accessToken;
+      console.log(token);
+      if (!token)
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     const productUpdated = await Product.findOneAndUpdate(
       {
         _id: args.id,
@@ -211,6 +234,10 @@ const updateProduct = {
       throw new Error("No product with the given ID found for the author");
     }
     return productUpdated;
+  } catch (err) {
+    console.log(err);
+    return res.status(401).json({ status: "error", message: "ERROR" });
+  }
   },
 };
 
@@ -220,11 +247,15 @@ const deleteProduct = {
   args: {
     productId: { type: GraphQLString },
   },
-  async resolve(parent, args, { verifiedUser }) {
-    console.log(verifiedUser);
-    if (!verifiedUser) {
-      throw new Error("Unauthenticated");
-    }
+  async resolve(parent, args, {req, res }) {
+    try {
+      const token = req.cookies.accessToken;
+      console.log(token);
+      if (!token)
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      const verified = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET);
     const productDeleted = await Product.findOneAndDelete({
       _id: args.productId,
       userId: verifiedUser._id,
@@ -233,6 +264,10 @@ const deleteProduct = {
       throw new Error("No wishlist with the given ID found for the author");
     }
     return "wishlist deleted";
+  } catch (err) {
+    console.log(err);
+    return res.status(401).json({ status: "error", message: "ERROR" });
+  }
   },
 };
 

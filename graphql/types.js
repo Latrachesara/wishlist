@@ -46,7 +46,7 @@ const WishlistType = new GraphQLObjectType({
   description: "Wishlist type",
   fields: () => ({
     id: { type: GraphQLID },
-    tite: { type: GraphQLString },
+    title: { type: GraphQLString },
     authorId: {
       type: UserType,
       resolve(parent, args) {
