@@ -19,7 +19,7 @@ const register = {
     password: { type: GraphQLString },
   },
   async resolve(parent, args, { res }) {
-    const {username, email, password}= args;
+    const { username, email, password } = args;
     const passwordHashed = await bcrypt.hash(password, 12);
     const user = new User({ username, email, password: passwordHashed });
     await user.save().then((user) => {
@@ -28,10 +28,10 @@ const register = {
       res.cookie("accessToken", token, {
         httpOnly: true,
         path: "/",
-        maxAge: 30 * 24 * 60 * 60 * 1000, //30days    
-      });  
+        maxAge: 30 * 24 * 60 * 60 * 1000, //30days
+      });
     });
-      return ("user created");
+    return "user created";
   },
 };
 
@@ -108,7 +108,7 @@ const updateWishlist = {
           _id: args.id,
           authorId: verified.id,
         },
-        { title: args.title},
+        { title: args.title },
         {
           new: true,
           runValidators: true,
@@ -122,7 +122,6 @@ const updateWishlist = {
       console.log(err);
       return res.status(401).json({ status: "error", message: "ERROR" });
     }
-   
   },
 };
 
@@ -133,32 +132,29 @@ const deleteWishlist = {
     wishlistId: { type: GraphQLString },
   },
   async resolve(parent, args, { req, res }) {
-
     try {
       const token = req.cookies.accessToken;
-    
+
       if (!token)
         return res
           .status(401)
           .json({ status: "error", message: "Unauthorized" });
       const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      
-    const wishlistDeleted = await Wishlist.findOneAndDelete({
-      _id: args.wishlistId,
-      authorId: verified.id,
-    });
-  
-    if (!wishlistDeleted) {
-      throw new Error("No wishlist with the given ID found for the author");
+      const wishlistDeleted = await Wishlist.findOneAndDelete({
+        _id: args.wishlistId,
+        authorId: verified.id,
+      });
+
+      if (!wishlistDeleted) {
+        throw new Error("No wishlist with the given ID found for the author");
+      }
+      return "Wishlist deleted";
+    } catch (err) {
+      console.log(err);
+      return res.status(401).json({ status: "error", message: "ERROR" });
     }
-    return "Wishlist deleted";
-  } catch (err) {
-    console.log(err);
-    return res.status(401).json({ status: "error", message: "ERROR" });
-  }
   },
 };
-
 
 const addProduct = {
   type: ProductType,
@@ -172,7 +168,7 @@ const addProduct = {
     image: { type: GraphQLString },
     wishlistId: { type: GraphQLString },
   },
-  resolve(parent, args, { req,res }) {
+  resolve(parent, args, { req, res }) {
     try {
       const token = req.cookies.accessToken;
       console.log(token);
@@ -220,26 +216,30 @@ const updateProduct = {
           .status(401)
           .json({ status: "error", message: "Unauthorized" });
       const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const productUpdated = await Product.findOneAndUpdate(
-      {
-        _id: args.id,
-        userId: verifiedUser._id,
-      },
-      { product: args.product },
-      {
-        new: true,
-        runValidators: true,
+      const productUpdated = await Product.findOneAndUpdate(
+        {
+          _id: args.id,
+          userId: verified.id,
+        },
+        { name: args.name,
+          price: args.price,
+          currency: args.currency,
+          description: args.description,
+          status: args.status,
+          image: args.image,},
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      if (!productUpdated) {
+        throw new Error("No product with the given ID found for the author");
       }
-    
-    );
-    if (!productUpdated) {
-      throw new Error("No product with the given ID found for the author");
+      return productUpdated;
+    } catch (err) {
+      console.log(err);
+      return res.status(401).json({ status: "error", message: "ERROR" });
     }
-    return productUpdated;
-  } catch (err) {
-    console.log(err);
-    return res.status(401).json({ status: "error", message: "ERROR" });
-  }
   },
 };
 
@@ -249,7 +249,7 @@ const deleteProduct = {
   args: {
     productId: { type: GraphQLString },
   },
-  async resolve(parent, args, {req, res }) {
+  async resolve(parent, args, { req, res }) {
     try {
       const token = req.cookies.accessToken;
       console.log(token);
@@ -257,19 +257,19 @@ const deleteProduct = {
         return res
           .status(401)
           .json({ status: "error", message: "Unauthorized" });
-      const verified = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET);
-    const productDeleted = await Product.findOneAndDelete({
-      _id: args.productId,
-      userId: verifiedUser._id,
-    });
-    if (!productDeleted) {
-      throw new Error("No wishlist with the given ID found for the author");
+      const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      const productDeleted = await Product.findOneAndDelete({
+        _id: args.productId,
+        userId: verifiedUser._id,
+      });
+      if (!productDeleted) {
+        throw new Error("No wishlist with the given ID found for the author");
+      }
+      return "wishlist deleted";
+    } catch (err) {
+      console.log(err);
+      return res.status(401).json({ status: "error", message: "ERROR" });
     }
-    return "wishlist deleted";
-  } catch (err) {
-    console.log(err);
-    return res.status(401).json({ status: "error", message: "ERROR" });
-  }
   },
 };
 
