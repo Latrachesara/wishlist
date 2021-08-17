@@ -210,7 +210,7 @@ const updateProduct = {
   async resolve(parent, args, { req, res }) {
     try {
       const token = req.cookies.accessToken;
-      console.log(token);
+     
       if (!token)
         return res
           .status(401)
@@ -226,12 +226,13 @@ const updateProduct = {
           currency: args.currency,
           description: args.description,
           status: args.status,
-          image: args.image,},
+          image: args.image},
         {
           new: true,
           runValidators: true,
         }
       );
+      console.log(productUpdated);
       if (!productUpdated) {
         throw new Error("No product with the given ID found for the author");
       }
@@ -260,7 +261,7 @@ const deleteProduct = {
       const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
       const productDeleted = await Product.findOneAndDelete({
         _id: args.productId,
-        userId: verifiedUser._id,
+        userId: verified.id,
       });
       if (!productDeleted) {
         throw new Error("No wishlist with the given ID found for the author");
