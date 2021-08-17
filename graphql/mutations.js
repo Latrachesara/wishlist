@@ -106,9 +106,9 @@ const updateWishlist = {
       const wishlistUpdated = await Wishlist.findOneAndUpdate(
         {
           _id: args.id,
-          authorId: verifiedUser._id,
+          authorId: verified.id,
         },
-        { title: args.title, body: args.body },
+        { title: args.title},
         {
           new: true,
           runValidators: true,
@@ -130,22 +130,24 @@ const deleteWishlist = {
   type: GraphQLString,
   description: "Delete wishlist",
   args: {
-    wishlitId: { type: GraphQLString },
+    wishlistId: { type: GraphQLString },
   },
   async resolve(parent, args, { req, res }) {
 
     try {
       const token = req.cookies.accessToken;
-      console.log(token);
+    
       if (!token)
         return res
           .status(401)
           .json({ status: "error", message: "Unauthorized" });
       const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      
     const wishlistDeleted = await Wishlist.findOneAndDelete({
       _id: args.wishlistId,
-      authorId: verifiedUser._id,
+      authorId: verified.id,
     });
+  
     if (!wishlistDeleted) {
       throw new Error("No wishlist with the given ID found for the author");
     }
